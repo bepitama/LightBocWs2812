@@ -1,4 +1,4 @@
-//Created by Giuseppe Tamanini 30/06/2021 with GNU license cc-by-sa 3.0
+//Created by Giuseppe Tamanini 30/06/2021 with license cc-by-sa 4.0
 
 #include <TM1637.h>
 #include "RTClib.h"
@@ -19,8 +19,10 @@ int hh; // hour
 int mm;  // minute
 int ss;  // second
 int oldss; // old second
-String Sore;
+String Sore; // String variables used for display on the TM1637
 char ore[5];
+String Sscena;
+char Cscena[5];
 int buttonPin = 12; // button pin
 unsigned long myTime; // button reading variable
 unsigned long myTime1;
@@ -79,7 +81,7 @@ void setup() {
   pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)  
   pixels.clear(); // Set all pixel colors to 'off'  previousMillis = millis();
   for (int i = 0; i < 10; i++) {
-    colora(i, scene[scena][i][0] + stepvalue[i][0] * n, scene[scena][i][1] + stepvalue[i][1] * n, scene[scena][i][2] + stepvalue[i][2] * n);
+    colora(i, scene[scena][i][0], scene[scena][i][1], scene[scena][i][2]);
   }
 }
 
@@ -88,14 +90,14 @@ void loop() {
   hh = now.hour();
   mm = now.minute();
   ss = now.second();
-  if (ss == oldss) {
+  if (ss == oldss) { // Every second shows the time on the TM1637 display
     if (millis() - previousMillis < 500 && dp == false) {
       sprintf(ore, "%02d%02d", hh, mm);
       Sore = ore;
       tm1637.display(Sore); // Display the time
       dp = true;
     }
-    if (millis() - previousMillis > 500 && dp == true) {
+    if (millis() - previousMillis > 500 && dp == true) { // Every half second makes the colon flash
       sprintf(ore, "%02d.%02d", hh, mm);
       Sore = ore;
       tm1637.display(Sore);
@@ -113,7 +115,7 @@ void loop() {
     oldvalbutton = false;  // sets the old button state to false
     cambiato = false; // the state of the button action is false 
   }
-  if (valbutton == false && oldvalbutton && cambiato == false && millis() - myTime > 100) {
+  if (valbutton == false && oldvalbutton && cambiato == false && millis() - myTime > 100) { // If the button has been pressed for 0.1 second increase the value increase the value scena
     oldvalbutton = false;
     scena = scena + 1;
     Serial.println(scena);
@@ -122,18 +124,22 @@ void loop() {
       oldscena = scena;
       if (scena < 4) {
         for (int i = 0; i < 10; i++) {
-          colora(i, scene[scena][i][0] + stepvalue[i][0] * n, scene[scena][i][1] + stepvalue[i][1] * n, scene[scena][i][2] + stepvalue[i][2] * n);
+          colora(i, scene[scena][i][0], scene[scena][i][1], scene[scena][i][2]);
         }
       }
     }
+    sprintf(Cscena, "   %d", scena);
+    Sscena = Cscena;
+    tm1637.display(Sscena); // Display the time
+    delay(500);
   }
   if (scena == 4) fade();
-  if (valbutton == false && oldvalbutton && cambiato == false && millis() - myTime > 3000) {
+  if (valbutton == false && oldvalbutton && cambiato == false && millis() - myTime > 3000) { // If the button has been pressed for 3 seconds execute moficaora function
     oldvalbutton = false;
     cambiato = false;
     modifica = true;
     myTime1 = millis();
-    modificaora(); // esegue la funzione modificadata
+    modificaora();
   }
 }
 
@@ -171,14 +177,14 @@ void modificaora() {
   }
 }
 
-void colora(int sezione, int R, int G, int B) {
+void colora(int sezione, int R, int G, int B) { // Program the colors of the WS2812 LEDs
   for (int i = sezioni[sezione][0] - 1; i < sezioni[sezione][1]; i++) {
     pixels.setPixelColor(i, pixels.Color(R, G, B));
   }
   pixels.show();   // Send the updated pixel colors to the hardware.
 }
 
-void fade() {
+void fade() { // Function that fades between scenes
   if (scenadissolve != oldscenadissolve && dissolve == false) {
     oldscenadissolve = scenadissolve;
     dissolve = true;
